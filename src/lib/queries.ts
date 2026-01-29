@@ -1,5 +1,7 @@
-import { query, execute } from "@/lib/db";
+import { query, execute, db } from "@/lib/db";
 import { Role } from "@/lib/auth";
+import { newId } from "@/lib/ids";
+import { slugify } from "@/lib/slug";
 
 export type UserRow = {
   id: string;
@@ -10,6 +12,18 @@ export type UserRow = {
   created_at: string;
 };
 
+export type CategoryRow = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+export type TagRow = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
 export type PostRow = {
   id: string;
   title: string;
@@ -18,9 +32,12 @@ export type PostRow = {
   content: string;
   status: "draft" | "published";
   author_id: string;
+  category_id: string | null;
+  category_name?: string | null;
   created_at: string;
   updated_at: string;
   published_at: string | null;
+  tags?: TagRow[];
 };
 
 export async function getUserByEmail(email: string) {
@@ -60,16 +77,56 @@ export async function deleteUser(id: string) {
   await execute("DELETE FROM users WHERE id = ?", [id]);
 }
 
+export async function listCategories() {
+  const result = await query<CategoryRow>("SELECT * FROM categories ORDER BY name ASC");
+  return result.rows;
+}
+
 export async function listPosts() {
   const result = await query<PostRow>(
-    "SELECT * FROM posts ORDER BY created_at DESC"
+    `SELECT p.*, c.name as category_name 
+     FROM posts p 
+     LEFT JOIN categories c ON p.category_id = c.id 
+     ORDER BY p.created_at DESC`
   );
   return result.rows;
+}
+
+export async function getPostBySlug(slug: string) {
+  const result = await query<PostRow>(
+    `SELECT p.*, c.name as category_name 
+     FROM posts p 
+     LEFT JOIN categories c ON p.category_id = c.id 
+     WHERE p.slug = ? AND p.status = 'published' LIMIT 1`,
+    [slug]
+  );
+  const post = result.rows[0] ?? null;
+  if (post) {
+    const tagsResult = await query<TagRow>(
+      `SELECT t.* FROM tags t 
+       JOIN post_tags pt ON t.id = pt.tag_id 
+       WHERE pt.post_id = ?`,
+      [post.id]
+    );
+    post.tags = tagsResult.rows;
+  }
+  return post;
 }
 
 export async function getPostById(id: string) {
   const result = await query<PostRow>("SELECT * FROM posts WHERE id = ? LIMIT 1", [id]);
   return result.rows[0] ?? null;
+}
+
+async function getOrCreateTag(name: string): Promise<string> {
+  const slug = slugify(name);
+  const existing = await query<TagRow>("SELECT id FROM tags WHERE slug = ?", [slug]);
+  if (existing.rows.length > 0) {
+    return existing.rows[0].id;
+  }
+  const id = newId();
+  await execute("INSERT INTO tags (id, name, slug) VALUES (?, ?, ?)", [id, name, slug]);
+  return id;
 }
 
 export async function createPost(input: {
@@ -81,9 +138,11 @@ export async function createPost(input: {
   status: "draft" | "published";
   authorId: string;
   publishedAt: string | null;
+  categoryId: string | null;
+  tags: string[]; // List of tag names
 }) {
   await execute(
-    "INSERT INTO posts (id, title, slug, excerpt, content, status, author_id, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO posts (id, title, slug, excerpt, content, status, author_id, published_at, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     [
       input.id,
       input.title,
@@ -92,9 +151,16 @@ export async function createPost(input: {
       input.content,
       input.status,
       input.authorId,
-      input.publishedAt
+      input.publishedAt,
+      input.categoryId
     ]
   );
+
+  for (const tagName of input.tags) {
+    if (!tagName.trim()) continue;
+    const tagId = await getOrCreateTag(tagName.trim());
+    await execute("INSERT INTO post_tags (post_id, tag_id) VALUES (?, ?)", [input.id, tagId]);
+  }
 }
 
 export async function updatePost(input: {

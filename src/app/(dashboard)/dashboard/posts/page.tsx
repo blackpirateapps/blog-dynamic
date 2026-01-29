@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth";
-import { createPost, deletePost, listPosts } from "@/lib/queries";
+import { createPost, deletePost, listPosts, listCategories } from "@/lib/queries";
 import { newId } from "@/lib/ids";
 import { slugify } from "@/lib/slug";
 
@@ -11,6 +11,8 @@ async function createPostAction(formData: FormData) {
   const excerpt = String(formData.get("excerpt") || "").trim();
   const content = String(formData.get("content") || "").trim();
   const status = String(formData.get("status") || "draft") as "draft" | "published";
+  const categoryId = String(formData.get("category_id") || "");
+  const tagsString = String(formData.get("tags") || "");
 
   if (!title || !content) {
     return;
@@ -18,6 +20,7 @@ async function createPostAction(formData: FormData) {
 
   const slug = slugify(title);
   const publishedAt = status === "published" ? new Date().toISOString() : null;
+  const tags = tagsString.split(",").map(t => t.trim()).filter(Boolean);
 
   await createPost({
     id: newId(),
@@ -27,7 +30,9 @@ async function createPostAction(formData: FormData) {
     content,
     status,
     authorId: session.userId,
-    publishedAt
+    publishedAt,
+    categoryId: categoryId || null,
+    tags
   });
 
   revalidatePath("/dashboard/posts");
@@ -45,6 +50,7 @@ async function deletePostAction(formData: FormData) {
 export default async function PostsPage() {
   await requireSession();
   const posts = await listPosts();
+  const categories = await listCategories();
 
   return (
     <div>
@@ -54,16 +60,36 @@ export default async function PostsPage() {
         <form action={createPostAction}>
           <label htmlFor="title">Title</label>
           <input id="title" name="title" required />
+          
           <label htmlFor="excerpt">Excerpt</label>
           <input id="excerpt" name="excerpt" />
+          
           <label htmlFor="content">Content</label>
           <textarea id="content" name="content" rows={8} required />
-          <label htmlFor="status">Status</label>
-          <select id="status" name="status" defaultValue="draft">
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-          </select>
-          <button className="button" type="submit">Save</button>
+          
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div>
+              <label htmlFor="status">Status</label>
+              <select id="status" name="status" defaultValue="draft">
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="category_id">Category</label>
+              <select id="category_id" name="category_id">
+                <option value="">Select Category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <label htmlFor="tags">Tags (comma separated)</label>
+          <input id="tags" name="tags" placeholder="e.g. World, Politics, Election" />
+
+          <button className="button" type="submit" style={{ marginTop: 16 }}>Save</button>
         </form>
       </div>
       <div className="card">
@@ -72,6 +98,7 @@ export default async function PostsPage() {
           <thead>
             <tr>
               <th>Title</th>
+              <th>Category</th>
               <th>Status</th>
               <th>Updated</th>
               <th></th>
@@ -81,6 +108,7 @@ export default async function PostsPage() {
             {posts.map((post) => (
               <tr key={post.id}>
                 <td>{post.title}</td>
+                <td>{post.category_name || "-"}</td>
                 <td>{post.status}</td>
                 <td>{new Date(post.updated_at).toLocaleDateString()}</td>
                 <td>
