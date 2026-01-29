@@ -14,37 +14,60 @@ export default async function HomePage() {
     "SELECT id, title, slug, excerpt, published_at FROM posts WHERE status = 'published' ORDER BY published_at DESC"
   );
 
+  const posts = result.rows;
+  const [heroPost, ...otherPosts] = posts;
+
   return (
     <div>
       <header>
-        <div>
-          <strong>Signal Desk</strong>
-          <div style={{ color: "var(--muted)", fontSize: 14 }}>Independent news, edited with care.</div>
+        <div className="header-inner">
+          <div className="brand">Signal Desk.</div>
+          <nav>
+            <Link href="/login" className="nav-link">Log In</Link>
+          </nav>
         </div>
-        <nav>
-          <Link href="/login">Dashboard</Link>
-        </nav>
       </header>
       <main>
-        <div className="banner">
-          <strong>Today&apos;s brief:</strong> A focused mix of policy, tech, and culture.
-        </div>
-        <section className="grid">
-          {result.rows.length === 0 && (
-            <div className="card">No published posts yet.</div>
-          )}
-          {result.rows.map((post) => (
-            <Link key={post.id} href={`/${post.slug}`} className="card">
-              <h2>{post.title}</h2>
-              <p style={{ color: "var(--muted)" }}>{post.excerpt ?? ""}</p>
-              <small>
-                Published {post.published_at ? new Date(post.published_at).toLocaleDateString() : ""}
-              </small>
-            </Link>
-          ))}
-        </section>
+        {posts.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "40px", color: "var(--muted)" }}>
+            <p>No stories have been published yet.</p>
+          </div>
+        ) : (
+          <>
+            {heroPost && (
+              <section className="hero-section">
+                <Link href={`/${heroPost.slug}`} className="hero-card">
+                  <span className="meta">
+                    {heroPost.published_at ? new Date(heroPost.published_at).toLocaleDateString(undefined, {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    }) : "Latest"}
+                  </span>
+                  <h1 className="hero-title">{heroPost.title}</h1>
+                  <p className="hero-excerpt">{heroPost.excerpt}</p>
+                </Link>
+              </section>
+            )}
+
+            <section className="grid">
+              {otherPosts.map((post) => (
+                <Link key={post.id} href={`/${post.slug}`} className="card">
+                  <span className="meta">
+                    {post.published_at ? new Date(post.published_at).toLocaleDateString() : ""}
+                  </span>
+                  <h2 className="card-title">{post.title}</h2>
+                  <p className="card-excerpt">{post.excerpt}</p>
+                  <span style={{ textDecoration: "underline", fontSize: "0.9rem" }}>Read full story &rarr;</span>
+                </Link>
+              ))}
+            </section>
+          </>
+        )}
       </main>
-      <div className="footer">Signal Desk · Built for Vercel + Turso</div>
+      <div className="footer">
+        &copy; {new Date().getFullYear()} Signal Desk News. All rights reserved.
+      </div>
     </div>
   );
 }
