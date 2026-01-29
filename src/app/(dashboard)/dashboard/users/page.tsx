@@ -5,7 +5,7 @@ import { newId } from "@/lib/ids";
 
 async function createUserAction(formData: FormData) {
   "use server";
-  requireRole("admin");
+  await requireRole("admin");
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const name = String(formData.get("name") || "").trim();
   const role = String(formData.get("role") || "editor") as "admin" | "editor";
@@ -29,7 +29,7 @@ async function createUserAction(formData: FormData) {
 
 async function deleteUserAction(formData: FormData) {
   "use server";
-  requireRole("admin");
+  await requireRole("admin");
   const id = String(formData.get("id") || "");
   if (!id) return;
   await deleteUser(id);
@@ -37,7 +37,7 @@ async function deleteUserAction(formData: FormData) {
 }
 
 export default async function UsersPage() {
-  requireRole("admin");
+  await requireRole("admin");
   const users = await listUsers();
 
   return (

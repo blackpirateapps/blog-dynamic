@@ -2,7 +2,7 @@ import { listPosts, listUsers } from "@/lib/queries";
 import { requireSession } from "@/lib/auth";
 
 export default async function DashboardPage() {
-  const session = requireSession();
+  const session = await requireSession();
   const posts = await listPosts();
   const users = session.role === "admin" ? await listUsers() : [];
 

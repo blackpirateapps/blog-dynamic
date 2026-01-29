@@ -6,7 +6,7 @@ import { slugify } from "@/lib/slug";
 
 async function createPostAction(formData: FormData) {
   "use server";
-  const session = requireSession();
+  const session = await requireSession();
   const title = String(formData.get("title") || "").trim();
   const excerpt = String(formData.get("excerpt") || "").trim();
   const content = String(formData.get("content") || "").trim();
@@ -35,7 +35,7 @@ async function createPostAction(formData: FormData) {
 
 async function deletePostAction(formData: FormData) {
   "use server";
-  requireSession();
+  await requireSession();
   const id = String(formData.get("id") || "");
   if (!id) return;
   await deletePost(id);
@@ -43,7 +43,7 @@ async function deletePostAction(formData: FormData) {
 }
 
 export default async function PostsPage() {
-  requireSession();
+  await requireSession();
   const posts = await listPosts();
 
   return (

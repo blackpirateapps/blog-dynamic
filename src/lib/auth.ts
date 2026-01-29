@@ -51,22 +51,23 @@ export function getSessionCookieOptions() {
   };
 }
 
-export function getSession(): Session | null {
-  const token = cookies().get(COOKIE_NAME)?.value;
+export async function getSession(): Promise<Session | null> {
+  const store = await cookies();
+  const token = store.get(COOKIE_NAME)?.value;
   if (!token) return null;
   return verifySession(token);
 }
 
-export function requireSession(): Session {
-  const session = getSession();
+export async function requireSession(): Promise<Session> {
+  const session = await getSession();
   if (!session) {
     redirect("/login");
   }
   return session;
 }
 
-export function requireRole(role: Role): Session {
-  const session = requireSession();
+export async function requireRole(role: Role): Promise<Session> {
+  const session = await requireSession();
   if (session.role !== role) {
     redirect("/dashboard");
   }
