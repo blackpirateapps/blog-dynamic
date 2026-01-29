@@ -13,7 +13,7 @@ const statements = schema
 
 async function migrate() {
   for (const statement of statements) {
-    await db.execute({ sql: statement });
+    await db.execute({ sql: statement, args: [] });
   }
   console.log("Migration complete");
 }
