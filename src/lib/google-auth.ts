@@ -44,7 +44,10 @@ export async function getGeminiAccessToken(): Promise<string | null> {
   try {
     const auth = new GoogleAuth({
       credentials,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"]
+      scopes: [
+        "https://www.googleapis.com/auth/cloud-platform",
+        "https://www.googleapis.com/auth/generative-language"
+      ]
     });
     const client = await auth.getClient();
     const accessToken = await client.getAccessToken();
