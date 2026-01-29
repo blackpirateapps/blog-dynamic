@@ -82,6 +82,11 @@ export async function listCategories() {
   return result.rows;
 }
 
+export async function listTags() {
+  const result = await query<TagRow>("SELECT * FROM tags ORDER BY name ASC");
+  return result.rows;
+}
+
 export async function listPosts() {
   const result = await query<PostRow>(
     `SELECT p.*, c.name as category_name 
