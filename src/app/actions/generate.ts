@@ -1,7 +1,7 @@
 "use server";
 
 import { getSetting } from "@/lib/settings";
-import { getGeminiAccessToken } from "@/lib/google-auth";
+import { getGeminiAccessToken, getGoogleCredentials } from "@/lib/google-auth";
 
 export async function generatePostContent(prompt: string) {
   const model = await getSetting("gemini_model", "gemini-1.5-flash");
@@ -32,12 +32,9 @@ export async function generatePostContent(prompt: string) {
   };
 
   if (accessToken) {
-    // If using OAuth, we don't need the key param, we use Authorization header
-    // Note: For Vertex AI or specific Cloud endpoints the URL might differ, 
-    // but for Generative Language API with OAuth, this is standard.
+    const credentials = await getGoogleCredentials();
     headers["Authorization"] = `Bearer ${accessToken}`;
-    // Also, if using Service Account, ensure the project has Generative Language API enabled.
-    headers["x-goog-user-project"] = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON!).project_id;
+    headers["x-goog-user-project"] = credentials?.project_id;
   } else {
     url += `?key=${apiKey}`;
   }

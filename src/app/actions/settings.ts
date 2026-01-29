@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { getSetting, setSetting } from "@/lib/settings";
-import { getGeminiAccessToken } from "@/lib/google-auth";
+import { getGeminiAccessToken, getGoogleCredentials } from "@/lib/google-auth";
 
 export async function fetchAvailableModels() {
   await requireRole("admin");
@@ -19,8 +19,9 @@ export async function fetchAvailableModels() {
   const headers: Record<string, string> = {};
 
   if (accessToken) {
+    const credentials = await getGoogleCredentials();
     headers["Authorization"] = `Bearer ${accessToken}`;
-    headers["x-goog-user-project"] = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON!).project_id;
+    headers["x-goog-user-project"] = credentials?.project_id;
   } else {
     url += `?key=${apiKey}`;
   }

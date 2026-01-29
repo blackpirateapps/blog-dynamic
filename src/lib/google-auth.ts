@@ -1,23 +1,47 @@
 import { GoogleAuth } from "google-auth-library";
 
-export async function getGeminiAccessToken(): Promise<string | null> {
-  let credentialsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+export async function getGoogleCredentials(): Promise<any | null> {
+  let credentialsSource = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
 
-  if (!credentialsJson) {
+  if (!credentialsSource) {
     return null;
   }
 
   try {
-    // Robustly clean the string: remove leading/trailing whitespace, and then remove wrapping quotes if present.
-    credentialsJson = credentialsJson.trim();
-    if (
-      (credentialsJson.startsWith("'") && credentialsJson.endsWith("'")) ||
-      (credentialsJson.startsWith('"') && credentialsJson.endsWith('"'))
-    ) {
-      credentialsJson = credentialsJson.substring(1, credentialsJson.length - 1);
+    credentialsSource = credentialsSource.trim();
+    
+    // Check if it is a URL
+    if (credentialsSource.startsWith("http://") || credentialsSource.startsWith("https://")) {
+      const response = await fetch(credentialsSource);
+      if (!response.ok) {
+        console.error(`Failed to fetch credentials from URL: ${response.status} ${response.statusText}`);
+        return null;
+      }
+      return await response.json();
+    } else {
+      // Existing logic for raw JSON string
+      if (
+        (credentialsSource.startsWith("'") && credentialsSource.endsWith("'")) ||
+        (credentialsSource.startsWith('"') && credentialsSource.endsWith('"'))
+      ) {
+        credentialsSource = credentialsSource.substring(1, credentialsSource.length - 1);
+      }
+      return JSON.parse(credentialsSource);
     }
+  } catch (error) {
+    console.error("Failed to parse/fetch Google Credentials:", error);
+    return null;
+  }
+}
 
-    const credentials = JSON.parse(credentialsJson);
+export async function getGeminiAccessToken(): Promise<string | null> {
+  const credentials = await getGoogleCredentials();
+
+  if (!credentials) {
+    return null;
+  }
+
+  try {
     const auth = new GoogleAuth({
       credentials,
       scopes: ["https://www.googleapis.com/auth/cloud-platform"]
