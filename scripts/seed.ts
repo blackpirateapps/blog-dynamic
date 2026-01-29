@@ -18,7 +18,13 @@ async function seed() {
   });
 
   if (existing.rows.length > 0) {
-    console.log("Admin user already exists");
+    console.log("Admin user already exists, updating credentials...");
+    const passwordHash = await hashPassword(password);
+    await db.execute({
+      sql: "UPDATE users SET name = ?, password_hash = ? WHERE email = ?",
+      args: [name, passwordHash, email]
+    });
+    console.log("Admin user updated");
     return;
   }
 
