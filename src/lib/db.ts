@@ -16,11 +16,11 @@ export type DbResult<T> = {
   rows: T[];
 };
 
-export async function query<T>(sql: string, args: unknown[] = []): Promise<DbResult<T>> {
+export async function query<T>(sql: string, args: any[] = []): Promise<DbResult<T>> {
   const result = await db.execute({ sql, args });
   return { rows: result.rows as T[] };
 }
 
-export async function execute(sql: string, args: unknown[] = []): Promise<void> {
+export async function execute(sql: string, args: any[] = []): Promise<void> {
   await db.execute({ sql, args });
 }
