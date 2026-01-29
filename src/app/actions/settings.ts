@@ -3,15 +3,29 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { getSetting, setSetting } from "@/lib/settings";
+import { getGeminiAccessToken } from "@/lib/google-auth";
 
 export async function fetchAvailableModels() {
   await requireRole("admin");
+  
+  const accessToken = await getGeminiAccessToken();
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not set");
+
+  if (!accessToken && !apiKey) {
+    throw new Error("Neither GOOGLE_APPLICATION_CREDENTIALS_JSON nor GEMINI_API_KEY is set");
   }
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`);
+  let url = "https://generativelanguage.googleapis.com/v1/models";
+  const headers: Record<string, string> = {};
+
+  if (accessToken) {
+    headers["Authorization"] = `Bearer ${accessToken}`;
+    headers["x-goog-user-project"] = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON!).project_id;
+  } else {
+    url += `?key=${apiKey}`;
+  }
+
+  const response = await fetch(url, { headers });
   if (!response.ok) {
     throw new Error(`Failed to fetch models: ${response.statusText}`);
   }
@@ -20,7 +34,7 @@ export async function fetchAvailableModels() {
   // Filter for models that support generateContent
   const models = data.models
     .filter((m: any) => m.supportedGenerationMethods.includes("generateContent"))
-    .map((m: any) => m.name.replace("models/", "")); // Strip 'models/' prefix for cleaner display/usage if desired, but API expects 'models/...' or just name. We'll store just the ID usually.
+    .map((m: any) => m.name.replace("models/", "")); 
   
   return models;
 }

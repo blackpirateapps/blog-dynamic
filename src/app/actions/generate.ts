@@ -1,14 +1,17 @@
 "use server";
 
 import { getSetting } from "@/lib/settings";
+import { getGeminiAccessToken } from "@/lib/google-auth";
 
 export async function generatePostContent(prompt: string) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not set");
-  }
-
   const model = await getSetting("gemini_model", "gemini-1.5-flash");
+  
+  const accessToken = await getGeminiAccessToken();
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!accessToken && !apiKey) {
+    throw new Error("Neither GOOGLE_APPLICATION_CREDENTIALS_JSON nor GEMINI_API_KEY is set");
+  }
 
   const systemPrompt = `
     You are a professional blog post writer. 
@@ -23,12 +26,25 @@ export async function generatePostContent(prompt: string) {
     Do not wrap the JSON in markdown code blocks. Return raw JSON.
   `;
 
-  // Using v1 API
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`, {
+  let url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent`;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (accessToken) {
+    // If using OAuth, we don't need the key param, we use Authorization header
+    // Note: For Vertex AI or specific Cloud endpoints the URL might differ, 
+    // but for Generative Language API with OAuth, this is standard.
+    headers["Authorization"] = `Bearer ${accessToken}`;
+    // Also, if using Service Account, ensure the project has Generative Language API enabled.
+    headers["x-goog-user-project"] = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON!).project_id;
+  } else {
+    url += `?key=${apiKey}`;
+  }
+
+  const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify({
       contents: [{
         parts: [{ text: systemPrompt + "\n\nUser Prompt: " + prompt }]
