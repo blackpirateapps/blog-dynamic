@@ -19,7 +19,8 @@ export async function generatePostContent(prompt: string) {
     Do not wrap the JSON in markdown code blocks. Return raw JSON.
   `;
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+  // Using v1 API and gemini-1.5-flash model
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -32,7 +33,9 @@ export async function generatePostContent(prompt: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`Gemini API Error: ${response.statusText}`);
+    const errorBody = await response.text();
+    console.error(`Gemini API Error: ${response.status} ${response.statusText}`, errorBody);
+    throw new Error(`Gemini API Error: ${response.status} ${response.statusText} - ${errorBody}`);
   }
 
   const data = await response.json();
