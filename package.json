@@ -8,7 +8,7 @@
     "build": "npm run db:migrate && npm run db:seed && next build",
     "start": "next start",
     "lint": "next lint",
-    "db:migrate": "tsx scripts/migrate.ts && tsx scripts/migrate-v2.ts",
+    "db:migrate": "tsx scripts/migrate.ts && tsx scripts/migrate-v2.ts && tsx scripts/migrate-v3.ts",
     "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {

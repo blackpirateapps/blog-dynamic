@@ -1,10 +1,14 @@
 "use server";
 
+import { getSetting } from "@/lib/settings";
+
 export async function generatePostContent(prompt: string) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY is not set");
   }
+
+  const model = await getSetting("gemini_model", "gemini-1.5-flash");
 
   const systemPrompt = `
     You are a professional blog post writer. 
@@ -19,8 +23,8 @@ export async function generatePostContent(prompt: string) {
     Do not wrap the JSON in markdown code blocks. Return raw JSON.
   `;
 
-  // Using v1 API and gemini-1.5-flash model
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+  // Using v1 API
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

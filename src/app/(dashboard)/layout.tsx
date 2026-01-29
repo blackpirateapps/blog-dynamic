@@ -11,7 +11,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <Link href="/dashboard" className="dashboard-brand">Signal Desk</Link>
         <Link href="/dashboard">Dashboard</Link>
         <Link href="/dashboard/posts">Posts</Link>
-        {session.role === "admin" && <Link href="/dashboard/users">Users</Link>}
+        {session.role === "admin" && (
+          <>
+            <Link href="/dashboard/users">Users</Link>
+            <Link href="/dashboard/settings">Settings</Link>
+          </>
+        )}
       </aside>
       <div className="dashboard-content">
         <div className="dashboard-header">

@@ -43,5 +43,10 @@ CREATE TABLE IF NOT EXISTS post_tags (
   FOREIGN KEY (tag_id) REFERENCES tags (id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS posts_status_idx ON posts (status);
 CREATE INDEX IF NOT EXISTS posts_author_idx ON posts (author_id);
