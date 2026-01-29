@@ -115,7 +115,17 @@ export async function getPostBySlug(slug: string) {
 
 export async function getPostById(id: string) {
   const result = await query<PostRow>("SELECT * FROM posts WHERE id = ? LIMIT 1", [id]);
-  return result.rows[0] ?? null;
+  const post = result.rows[0] ?? null;
+  if (post) {
+    const tagsResult = await query<TagRow>(
+      `SELECT t.* FROM tags t 
+       JOIN post_tags pt ON t.id = pt.tag_id 
+       WHERE pt.post_id = ?`,
+      [post.id]
+    );
+    post.tags = tagsResult.rows;
+  }
+  return post;
 }
 
 async function getOrCreateTag(name: string): Promise<string> {
@@ -171,9 +181,11 @@ export async function updatePost(input: {
   content: string;
   status: "draft" | "published";
   publishedAt: string | null;
+  categoryId: string | null;
+  tags: string[];
 }) {
   await execute(
-    "UPDATE posts SET title = ?, slug = ?, excerpt = ?, content = ?, status = ?, published_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+    "UPDATE posts SET title = ?, slug = ?, excerpt = ?, content = ?, status = ?, published_at = ?, category_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
     [
       input.title,
       input.slug,
@@ -181,9 +193,19 @@ export async function updatePost(input: {
       input.content,
       input.status,
       input.publishedAt,
+      input.categoryId,
       input.id
     ]
   );
+
+  // Update tags: simplest way is delete all and re-add
+  await execute("DELETE FROM post_tags WHERE post_id = ?", [input.id]);
+
+  for (const tagName of input.tags) {
+    if (!tagName.trim()) continue;
+    const tagId = await getOrCreateTag(tagName.trim());
+    await execute("INSERT INTO post_tags (post_id, tag_id) VALUES (?, ?)", [input.id, tagId]);
+  }
 }
 
 export async function deletePost(id: string) {

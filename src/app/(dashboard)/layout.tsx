@@ -1,28 +1,29 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/auth";
+import "./dashboard.css";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
 
   return (
-    <div>
-      <header>
-        <div>
-          <strong>Signal Desk · Dashboard</strong>
-          <div style={{ color: "var(--muted)", fontSize: 14 }}>
-            Signed in as {session.email} ({session.role})
+    <div className="dashboard-container">
+      <aside className="dashboard-sidebar">
+        <Link href="/dashboard" className="dashboard-brand">Signal Desk</Link>
+        <Link href="/dashboard">Dashboard</Link>
+        <Link href="/dashboard/posts">Posts</Link>
+        {session.role === "admin" && <Link href="/dashboard/users">Users</Link>}
+      </aside>
+      <div className="dashboard-content">
+        <div className="dashboard-header">
+          <div>
+            Howdy, {session.email}
           </div>
-        </div>
-        <nav>
-          <Link href="/dashboard">Overview</Link>
-          <Link href="/dashboard/posts">Posts</Link>
-          {session.role === "admin" && <Link href="/dashboard/users">Users</Link>}
-          <form action="/api/logout" method="post" style={{ display: "inline" }}>
-            <button className="button ghost" type="submit">Sign out</button>
+          <form action="/api/logout" method="post">
+            <button className="wp-button secondary" type="submit">Log Out</button>
           </form>
-        </nav>
-      </header>
-      <main>{children}</main>
+        </div>
+        <main>{children}</main>
+      </div>
     </div>
   );
 }
