@@ -5,61 +5,68 @@ export default async function PublicLayout({ children }: { children: React.React
   const categories = await listCategories();
   const tags = await listTags();
 
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
   return (
     <div>
       <header>
-        <div className="header-inner" style={{ flexDirection: "column", alignItems: "flex-start" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center", marginBottom: "16px" }}>
-            <Link href="/" className="brand">Signal Desk.</Link>
-            <nav>
-              <Link href="/login" className="nav-link">Log In</Link>
-            </nav>
-          </div>
-          <nav style={{ borderTop: "1px solid var(--border)", width: "100%", paddingTop: "12px", overflowX: "auto", whiteSpace: "nowrap" }}>
+        <div className="header-inner">
+          <span className="masthead-date">{today}</span>
+          <Link href="/" className="brand">Signal Desk</Link>
+          <span className="tagline">Independent journalism, edited with care</span>
+          <nav className="nav-bar">
             {categories.map(cat => (
-              <Link key={cat.id} href={`/?category=${cat.slug}`} style={{ marginRight: "20px", fontSize: "0.9rem", fontWeight: "600", textTransform: "uppercase", display: "inline-block" }}>
+              <Link key={cat.id} href={`/?category=${cat.slug}`} className="category-link">
                 {cat.name}
               </Link>
             ))}
+            <Link href="/login" className="nav-link">Log In</Link>
           </nav>
         </div>
       </header>
+
       <main>{children}</main>
-      <footer style={{ borderTop: "1px solid var(--border)", background: "#f9f9f9", padding: "60px 0" }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "40px" }}>
+
+      <footer className="footer">
+        <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "48px" }}>
           <div>
-            <h4 style={{ marginBottom: "20px", fontSize: "1rem" }}>Signal Desk.</h4>
-            <p style={{ fontSize: "0.9rem", color: "var(--muted)", lineHeight: 1.6 }}>
+            <h4>Signal Desk</h4>
+            <p style={{ opacity: 0.75 }}>
               Independent news, edited with care. Covering the stories that matter with depth and perspective.
             </p>
           </div>
           <div>
-            <h4 style={{ marginBottom: "20px", fontSize: "1rem" }}>Sections</h4>
+            <h4>Sections</h4>
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {categories.map(cat => (
-                <li key={cat.id} style={{ marginBottom: "8px" }}>
-                  <Link href={`/?category=${cat.slug}`} style={{ fontSize: "0.9rem", color: "var(--muted)" }}>{cat.name}</Link>
+                <li key={cat.id} style={{ marginBottom: "10px" }}>
+                  <Link href={`/?category=${cat.slug}`}>{cat.name}</Link>
                 </li>
               ))}
             </ul>
           </div>
           <div>
-            <h4 style={{ marginBottom: "20px", fontSize: "1rem" }}>Trending Topics</h4>
-             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              {tags.slice(0, 10).map(tag => (
-                 <span key={tag.id} style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: "4px", padding: "4px 8px", fontSize: "0.8rem", color: "var(--muted)" }}>
-                   #{tag.name}
-                 </span>
+            <h4>Topics</h4>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {tags.slice(0, 8).map(tag => (
+                <span key={tag.id} style={{ background: "rgba(255,255,255,0.1)", borderRadius: "2px", padding: "4px 10px", fontSize: "0.8rem" }}>
+                  {tag.name}
+                </span>
               ))}
             </div>
           </div>
           <div>
-            <h4 style={{ marginBottom: "20px", fontSize: "1rem" }}>Editorial</h4>
+            <h4>Editorial</h4>
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              <li style={{ marginBottom: "8px" }}><Link href="/login" style={{ fontSize: "0.9rem", color: "var(--muted)" }}>Staff Login</Link></li>
+              <li style={{ marginBottom: "10px" }}><Link href="/login">Staff Login</Link></li>
             </ul>
-             <p style={{ marginTop: "20px", fontSize: "0.8rem", color: "var(--muted)" }}>
-              &copy; {new Date().getFullYear()} Signal Desk News.
+            <p style={{ marginTop: "24px", fontSize: "0.8rem", opacity: 0.6 }}>
+              &copy; {new Date().getFullYear()} Signal Desk News. All rights reserved.
             </p>
           </div>
         </div>

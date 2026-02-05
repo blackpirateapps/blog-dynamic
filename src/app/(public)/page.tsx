@@ -24,9 +24,7 @@ export default async function HomePage(props: { searchParams: Promise<{ category
   const result = await query<PostRow>(sql, args);
 
   const posts = result.rows;
-  // If filtering, we don't necessarily want a hero layout, but for now keep it simple.
-  // If there is a category filter, maybe no hero? Let's keep hero logic if no filter.
-  
+
   let heroPost: PostRow | undefined;
   let otherPosts = posts;
 
@@ -34,12 +32,21 @@ export default async function HomePage(props: { searchParams: Promise<{ category
     [heroPost, ...otherPosts] = posts;
   }
 
+  const formatDate = (dateStr: string | null, long = false) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    if (long) {
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
   return (
     <div>
       {posts.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px", color: "var(--muted)" }}>
-          <p>No stories found.</p>
-          {categorySlug && <Link href="/">View all stories</Link>}
+        <div style={{ textAlign: "center", padding: "60px", color: "var(--muted)" }}>
+          <p style={{ fontSize: "1.25rem" }}>No stories found.</p>
+          {categorySlug && <Link href="/" className="read-more">View all stories &rarr;</Link>}
         </div>
       ) : (
         <>
@@ -47,15 +54,12 @@ export default async function HomePage(props: { searchParams: Promise<{ category
             <section className="hero-section">
               <Link href={`/${heroPost.slug}`} className="hero-card">
                 <span className="meta">
-                  {heroPost.category_name ? <span style={{ color: "var(--accent)", fontWeight: "bold", marginRight: "8px" }}>{heroPost.category_name}</span> : ""}
-                  {heroPost.published_at ? new Date(heroPost.published_at).toLocaleDateString(undefined, {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  }) : "Latest"}
+                  {heroPost.category_name && <span className="category-tag">{heroPost.category_name}</span>}
+                  {formatDate(heroPost.published_at, true)}
                 </span>
                 <h1 className="hero-title">{heroPost.title}</h1>
                 <p className="hero-excerpt">{heroPost.excerpt}</p>
+                <span className="read-more">Continue reading &rarr;</span>
               </Link>
             </section>
           )}
@@ -64,12 +68,12 @@ export default async function HomePage(props: { searchParams: Promise<{ category
             {otherPosts.map((post) => (
               <Link key={post.id} href={`/${post.slug}`} className="card">
                 <span className="meta">
-                   {post.category_name ? <span style={{ color: "var(--accent)", fontWeight: "bold", marginRight: "8px" }}>{post.category_name}</span> : ""}
-                  {post.published_at ? new Date(post.published_at).toLocaleDateString() : ""}
+                  {post.category_name && <span className="category-tag">{post.category_name}</span>}
+                  {formatDate(post.published_at)}
                 </span>
                 <h2 className="card-title">{post.title}</h2>
                 <p className="card-excerpt">{post.excerpt}</p>
-                <span style={{ textDecoration: "underline", fontSize: "0.9rem" }}>Read full story &rarr;</span>
+                <span className="read-more">Read more &rarr;</span>
               </Link>
             ))}
           </section>
